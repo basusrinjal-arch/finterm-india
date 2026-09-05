@@ -498,9 +498,27 @@ function doForecast() {
 
 function initMacro() {
   var g = $('mac-grid');
-  var html = ''; for (var i = 0; i < MACRO_DATA.length; i++) { var m = MACRO_DATA[i]; html += '<div class="macro-c"><div class="macro-l">' + m.l + '</div><div class="macro-v">' + m.v + '</div><div class="macro-s ' + m.c + '">' + m.s + '</div></div>'; }
+  var html = '';
+  for (var i = 0; i < MACRO_DATA.length; i++) {
+    var m = MACRO_DATA[i];
+    html += '<div class="macro-c"><div class="macro-l">' + m.l + '</div><div class="macro-v" id="mac-v-' + i + '">' + m.v + '</div><div class="macro-s ' + m.c + '" id="mac-s-' + i + '">' + m.s + '</div></div>';
+  }
   g.innerHTML = html;
-  $('mac-flows').innerHTML = ir('FII cash', '-Rs 1,240 Cr') + ir('DII cash', '+Rs 2,180 Cr') + ir('FII F and O net', '-Rs 3,450 Cr') + ir('FII month to date', '-Rs 8,920 Cr') + ir('DII month to date', '+Rs 14,600 Cr') + ir('Net institutional', 'DII-led support');
+  // Entries with a Yahoo ticker (INR/USD, India VIX) get live-fetched and overwritten
+  // in place; everything else is a periodic official release with no ticker to poll,
+  // shown pinned to its last release as any real terminal would.
+  MACRO_DATA.forEach(function (m, i) {
+    if (!m.ySym) return;
+    fetchPriceOnly(m.ySym, function (q) {
+      if (!q) return;
+      var vEl = $('mac-v-' + i), sEl = $('mac-s-' + i);
+      if (!vEl) return;
+      vEl.textContent = f2(q.price);
+      sEl.innerHTML = (q.chgPct >= 0 ? '+' : '') + f2(q.chgPct) + '% today ' + srcBadge(q.src);
+      sEl.className = 'macro-s ' + (q.chgPct >= 0 ? 'up' : 'dn');
+    });
+  });
+  $('mac-flows').innerHTML = ir('FII cash', '-Rs 1,240 Cr') + ir('DII cash', '+Rs 2,180 Cr') + ir('FII F and O net', '-Rs 3,450 Cr') + ir('FII month to date', '-Rs 8,920 Cr') + ir('DII month to date', '+Rs 14,600 Cr') + ir('Net institutional', 'DII-led support') + '<div class="note" style="margin-top:6px">NSE/NSDL publish these end-of-day, with no free live feed - shown as last known session, not real-time.</div>';
   $('mac-sp').innerHTML = ir('Repo vs 10Y spread', '+135bp') + ir('SDF rate', '5.25%') + ir('MSF rate', '5.75%') + ir('Call money rate', '5.48%') + ir('CD 3M rate', '6.20%') + ir('AAA corp spread', '45bp');
   dC('mac-c');
   var labels = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];

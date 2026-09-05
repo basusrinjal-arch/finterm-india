@@ -111,16 +111,22 @@ var TICKER_SEED = [
   { s: 'SBIN', sym: 'SBIN.NS' }, { s: 'ICICIBANK', sym: 'ICICIBANK.NS' }
 ];
 
+// Entries with `ySym` are fetched live from Yahoo Finance (FX and volatility index
+// tickers exist there) and overwrite `v`/`s` on load - `v`/`s` here are just the
+// seeded fallback shown until that resolves (or if live fetch fails). Entries without
+// `ySym` are periodic official releases (RBI/MOSPI) with no market ticker to poll -
+// these stay pinned to their last known release, same as any real terminal would show
+// them, and are labeled "as of" rather than implied to be live.
 var MACRO_DATA = [
-  { l: 'RBI repo rate', v: '5.50%', s: 'Unchanged since April', c: 'neu' },
-  { l: 'CPI inflation YoY', v: '3.16%', s: 'Within RBI 2-6% band', c: 'up' },
-  { l: 'India GDP growth', v: '7.4%', s: 'Q4 FY26, strongest major economy', c: 'up' },
-  { l: 'Unemployment', v: '7.0%', s: 'PLFS estimate', c: 'neu' },
-  { l: '10Y G-Sec yield', v: '6.85%', s: '+1bp today', c: 'neu' },
-  { l: 'INR per USD', v: '86.42', s: 'Near record low', c: 'dn' },
-  { l: 'India VIX', v: '12.8', s: 'Low, complacent volatility', c: 'up' },
-  { l: 'WPI inflation', v: '2.05%', s: 'Wholesale prices', c: 'up' },
-  { l: 'Forex reserves', v: 'USD 645B', s: 'Among the largest globally', c: 'up' }
+  { l: 'RBI repo rate', v: '5.50%', s: 'As of Apr 2026 review - periodic release', c: 'neu' },
+  { l: 'CPI inflation YoY', v: '3.16%', s: 'As of latest release - within RBI 2-6% band', c: 'up' },
+  { l: 'India GDP growth', v: '7.4%', s: 'Q4 FY26 - periodic release', c: 'up' },
+  { l: 'Unemployment', v: '7.0%', s: 'PLFS estimate - periodic release', c: 'neu' },
+  { l: '10Y G-Sec yield', v: '6.85%', s: 'As of latest session - periodic release', c: 'neu' },
+  { l: 'INR per USD', v: '86.42', s: 'Simulated fallback', c: 'dn', ySym: 'INR=X' },
+  { l: 'India VIX', v: '12.8', s: 'Simulated fallback', c: 'up', ySym: '^INDIAVIX' },
+  { l: 'WPI inflation', v: '2.05%', s: 'Wholesale prices - periodic release', c: 'up' },
+  { l: 'Forex reserves', v: 'USD 645B', s: 'RBI weekly statistical supplement', c: 'up' }
 ];
 
 var EARNINGS_DATA = [
