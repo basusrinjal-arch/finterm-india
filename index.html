@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FINTERM INDIA — NSE/BSE Financial Terminal</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<datalist id="stock-list"></datalist>
+
+<div class="ft" id="ft">
+  <div class="ticker-wrap"><div class="ticker-inner" id="strip"></div></div>
+
+  <div class="nav">
+    <span class="brand"><i class="ti ti-chart-area-line" aria-hidden="true"></i> FINTERM INDIA</span>
+    <div class="nav-right">
+      <label class="live-toggle">
+        <input type="checkbox" id="live-mode-toggle" checked>
+        <span>Live mode</span>
+      </label>
+      <div class="tabs" id="tabs">
+        <button class="tab on" data-tab="a">Analyse</button>
+        <button class="tab" data-tab="t">Technical</button>
+        <button class="tab" data-tab="fc">Forecast</button>
+        <button class="tab" data-tab="opt">Options</button>
+        <button class="tab" data-tab="mac">Macro</button>
+        <button class="tab" data-tab="earn">Earnings</button>
+        <button class="tab" data-tab="hm">Heatmap</button>
+        <button class="tab" data-tab="news">News</button>
+        <button class="tab" data-tab="al">Alerts</button>
+        <button class="tab" data-tab="bt">Backtest</button>
+        <button class="tab" data-tab="port">Portfolio</button>
+        <button class="tab" data-tab="sc">Screener</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- ANALYSE -->
+    <div class="scr on" id="scr-a">
+      <div class="r">
+        <input id="a-sym" value="RELIANCE.NS" placeholder="Search any NSE/BSE symbol..." list="stock-list"/>
+        <select id="a-type"><option value="stock">Stock</option><option value="etf">ETF</option><option value="index">Index</option><option value="bond">Bond/G-Sec</option></select>
+        <button class="btn p" id="a-fetch-btn"><i class="ti ti-search" aria-hidden="true"></i> Fetch</button>
+        <button class="btn" id="a-ai-btn">AI</button>
+      </div>
+      <div class="load" id="a-load" style="display:none">Fetching data...</div>
+      <div class="err" id="a-err" style="display:none"></div>
+      <div id="a-main" style="display:none">
+        <div class="kg">
+          <div class="kc"><div class="kl">Price</div><div class="kv" id="a-price">--</div><div class="ks" id="a-chg">--</div></div>
+          <div class="kc"><div class="kl">Market cap</div><div class="kv" id="a-mc">--</div><div class="ks" id="a-mc2">--</div></div>
+          <div class="kc"><div class="kl">52-week range</div><div class="kv" id="a-52" style="font-size:11px;padding-top:3px">--</div><div class="rbar"><div class="rfill" id="a-rf" style="width:50%"></div></div></div>
+          <div class="kc"><div class="kl">Volume</div><div class="kv" id="a-vol">--</div><div class="ks">daily</div></div>
+        </div>
+        <div class="cw" style="height:200px"><canvas id="a-c" role="img" aria-label="Price history chart">Price chart</canvas></div>
+        <div class="ig">
+          <div class="ic"><div class="ict">Valuation</div><div id="a-val"></div></div>
+          <div class="ic"><div class="ict">Fundamentals</div><div id="a-fund"></div></div>
+        </div>
+        <div class="ic" id="a-fscore" style="display:none;margin-bottom:10px"></div>
+      </div>
+      <div class="ai-box" id="a-ai" style="display:none"></div>
+    </div>
+
+    <!-- TECHNICAL -->
+    <div class="scr" id="scr-t">
+      <div class="r">
+        <input id="t-sym" value="RELIANCE.NS" list="stock-list"/>
+        <select id="t-per"><option value="3mo">3M</option><option value="6mo" selected>6M</option><option value="1y">1Y</option></select>
+        <button class="btn p" id="t-load-btn"><i class="ti ti-chart-candle" aria-hidden="true"></i> Load</button>
+      </div>
+      <div class="chips">
+        <button class="chip on" id="ic-sma" data-ind="sma">SMA 20/50</button>
+        <button class="chip" id="ic-bb" data-ind="bb">Bollinger bands</button>
+        <button class="chip" id="ic-rsi" data-ind="rsi">RSI 14</button>
+        <button class="chip" id="ic-macd" data-ind="macd">MACD</button>
+        <button class="chip" id="ic-vol" data-ind="vol">Volume</button>
+        <button class="chip" id="ic-ema" data-ind="ema">EMA 12/26</button>
+        <button class="chip" id="ic-atr" data-ind="atr">ATR</button>
+      </div>
+      <div class="load" id="t-load" style="display:none">Loading indicator data...</div>
+      <div class="err" id="t-err" style="display:none"></div>
+      <div id="t-main" style="display:none">
+        <div class="cw" style="height:210px"><canvas id="t-c" role="img" aria-label="Technical chart with overlays">Technical chart</canvas></div>
+        <div class="cw" id="t-sw" style="height:120px;display:none"><canvas id="t-sub" role="img" aria-label="Sub indicator">Sub indicator</canvas></div>
+        <div class="ig">
+          <div class="ic"><div class="ict">Indicator values</div><div id="t-iv"></div></div>
+          <div class="ic"><div class="ict">Signal summary</div><div id="t-sig"></div></div>
+        </div>
+        <button class="xbtn" id="t-ai-btn">Ask AI to interpret these signals</button>
+      </div>
+    </div>
+
+    <!-- FORECAST -->
+    <div class="scr" id="scr-fc">
+      <div class="r">
+        <input id="fc-sym" value="RELIANCE.NS" list="stock-list" placeholder="Search any NSE/BSE symbol..."/>
+        <select id="fc-horizon"><option value="7">1 week</option><option value="30" selected>1 month</option><option value="90">3 months</option><option value="180">6 months</option></select>
+        <button class="btn p" id="fc-run-btn"><i class="ti ti-chart-line" aria-hidden="true"></i> Project</button>
+      </div>
+      <div class="load" id="fc-load" style="display:none">Fitting drift and volatility...</div>
+      <div class="err" id="fc-err" style="display:none"></div>
+      <div id="fc-main" style="display:none">
+        <div class="kg">
+          <div class="kc"><div class="kl">Current price</div><div class="kv" id="fc-cur">--</div><div class="ks" id="fc-src"></div></div>
+          <div class="kc"><div class="kl">Median projection</div><div class="kv" id="fc-exp">--</div></div>
+          <div class="kc"><div class="kl">68% range at horizon</div><div class="kv" id="fc-rng" style="font-size:13px">--</div></div>
+          <div class="kc"><div class="kl">P(price up) at horizon</div><div class="kv" id="fc-prob">--</div></div>
+        </div>
+        <div class="cw" style="height:220px"><canvas id="fc-c" role="img" aria-label="Price forecast cone chart">Forecast chart</canvas></div>
+        <div class="ig">
+          <div class="ic"><div class="ict">Model inputs (trailing 1y)</div>
+            <div class="ir"><span>Annualized volatility</span><span id="fc-vol">--</span></div>
+            <div class="ir"><span>Annualized drift</span><span id="fc-drift">--</span></div>
+            <div class="ir"><span>Method</span><span>GBM: log-return drift/vol</span></div>
+          </div>
+          <div class="ic"><div class="ict">Read this correctly</div>
+            <div style="font-size:11px;color:#8892a4;line-height:1.5">This is a statistical projection from historical drift and volatility (the same lognormal model behind Black-Scholes) - not a prediction. Real prices are driven by news, earnings and flows this model does not see. Widen horizon and the cone widens fast; treat it as a risk range, not a forecast to trade on blindly.</div>
+          </div>
+        </div>
+        <button class="xbtn" id="fc-ai-btn">Ask AI to contextualize this forecast</button>
+      </div>
+    </div>
+
+    <!-- OPTIONS -->
+    <div class="scr" id="scr-opt">
+      <div class="r">
+        <select id="opt-idx"><option value="NIFTY">NIFTY 50</option><option value="BANKNIFTY">BANK NIFTY</option></select>
+        <input id="opt-price" placeholder="Spot" type="number" value="23500" style="width:90px"/>
+        <select id="opt-exp" style="width:95px"><option value="0.019">This week</option><option value="0.083" selected>1 month</option><option value="0.25">3 months</option></select>
+        <input id="opt-vol" placeholder="IV %" type="number" value="13.5" style="width:70px"/>
+        <button class="btn p" id="opt-build-btn"><i class="ti ti-table" aria-hidden="true"></i> Build chain</button>
+      </div>
+      <div class="kg3">
+        <div class="kc"><div class="kl">ATM call price</div><div class="kv" id="og-call">--</div></div>
+        <div class="kc"><div class="kl">ATM put price</div><div class="kv" id="og-put">--</div></div>
+        <div class="kc"><div class="kl">ATM delta</div><div class="kv" id="og-delta">--</div></div>
+      </div>
+      <div class="tbl-wrap">
+        <table class="opt-tbl">
+          <thead><tr><th>Strike</th><th>C bid</th><th>C ask</th><th>Delta</th><th>Gamma</th><th>Theta</th><th>Vega</th><th>P bid</th><th>P ask</th><th>Delta</th></tr></thead>
+          <tbody id="opt-body"></tbody>
+        </table>
+      </div>
+      <div class="note">Strikes spaced at NSE convention: NIFTY 50pt, BANKNIFTY 100pt. Risk-free rate r = RBI repo rate (5.50%). Computed live with Black-Scholes, not a live NSE options feed.</div>
+      <button class="xbtn" style="margin-top:8px" id="opt-ai-btn">Ask AI: explain Greeks and strategy ideas</button>
+    </div>
+
+    <!-- MACRO -->
+    <div class="scr" id="scr-mac">
+      <div class="macro-g" id="mac-grid"></div>
+      <div class="cw" style="height:190px"><canvas id="mac-c" role="img" aria-label="India macro chart: CPI vs repo rate">Macro chart</canvas></div>
+      <div class="ig">
+        <div class="ic"><div class="ict">FII / DII flows, latest session</div><div id="mac-flows"></div></div>
+        <div class="ic"><div class="ict">Key rates and spreads</div><div id="mac-sp"></div></div>
+      </div>
+      <button class="xbtn" id="mac-ai-btn">Ask AI to analyze India macro environment</button>
+    </div>
+
+    <!-- EARNINGS -->
+    <div class="scr" id="scr-earn">
+      <div class="r">
+        <select id="earn-filter"><option value="all">All upcoming</option><option value="beat">Beat estimates</option><option value="miss">Missed estimates</option></select>
+        <button class="btn p" id="earn-refresh-btn"><i class="ti ti-calendar" aria-hidden="true"></i> Refresh</button>
+      </div>
+      <div id="earn-list"></div>
+      <button class="xbtn" style="margin-top:8px" id="earn-ai-btn">Ask AI which results to watch</button>
+    </div>
+
+    <!-- HEATMAP -->
+    <div class="scr" id="scr-hm">
+      <div class="r">
+        <select id="hm-view"><option value="sector">By sector</option><option value="nifty50">NIFTY 50 top 25</option><option value="indices">Indian indices</option><option value="global">Global markets</option></select>
+        <button class="btn p" id="hm-update-btn"><i class="ti ti-layout-grid" aria-hidden="true"></i> Update</button>
+      </div>
+      <div id="hm-grid" class="hm-grid"></div>
+      <div class="legend-row">
+        <span><span class="sw up-sw"></span>Positive</span>
+        <span><span class="sw dn-sw"></span>Negative</span>
+        <span><span class="sw neu-sw"></span>Flat</span>
+      </div>
+      <button class="xbtn" id="hm-ai-btn">Ask AI to analyze sector rotation</button>
+    </div>
+
+    <!-- NEWS -->
+    <div class="scr" id="scr-news">
+      <div class="r">
+        <input id="news-sym" placeholder="Filter by symbol (optional)" style="flex:1"/>
+        <select id="news-sent"><option value="all">All sentiment</option><option value="pos">Positive</option><option value="neg">Negative</option><option value="neu">Neutral</option></select>
+        <button class="btn p" id="news-load-btn"><i class="ti ti-news" aria-hidden="true"></i> Load</button>
+      </div>
+      <div id="news-list"></div>
+    </div>
+
+    <!-- ALERTS -->
+    <div class="scr" id="scr-al">
+      <div class="r">
+        <input id="al-sym" placeholder="Symbol" style="width:90px"/>
+        <select id="al-cond"><option value="above">Price above</option><option value="below">Price below</option></select>
+        <input id="al-val" placeholder="Value" type="number" style="width:80px"/>
+        <button class="btn p" id="al-add-btn"><i class="ti ti-bell" aria-hidden="true"></i> Add alert</button>
+      </div>
+      <div id="al-list"></div>
+      <div class="note">Alerts check against current quotes every 30 seconds. Cleared on page reload.</div>
+    </div>
+
+    <!-- BACKTEST -->
+    <div class="scr" id="scr-bt">
+      <div class="r">
+        <input id="bt-sym" value="RELIANCE.NS" list="stock-list"/>
+        <select id="bt-strat">
+          <option value="sma_cross">SMA crossover (20/50)</option>
+          <option value="rsi_ob">RSI overbought/oversold</option>
+          <option value="bb_bounce">Bollinger band bounce</option>
+          <option value="macd_cross">MACD crossover</option>
+          <option value="buy_hold">Buy and hold</option>
+        </select>
+        <select id="bt-period"><option value="1y">1 year</option><option value="2y">2 years</option><option value="5y">5 years</option></select>
+        <input id="bt-capital" placeholder="Capital" type="number" value="100000" style="width:90px"/>
+        <button class="btn p" id="bt-run-btn"><i class="ti ti-player-play" aria-hidden="true"></i> Run</button>
+      </div>
+      <div class="load" id="bt-load" style="display:none">Running backtest...</div>
+      <div class="err" id="bt-err" style="display:none"></div>
+      <div id="bt-main" style="display:none">
+        <div class="kg">
+          <div class="kc"><div class="kl">Final value</div><div class="kv" id="bt-fv">--</div></div>
+          <div class="kc"><div class="kl">Total return</div><div class="kv" id="bt-ret">--</div></div>
+          <div class="kc"><div class="kl">Max drawdown</div><div class="kv dn" id="bt-dd">--</div></div>
+          <div class="kc"><div class="kl">Total trades</div><div class="kv" id="bt-tr">--</div></div>
+        </div>
+        <div class="kg3">
+          <div class="kc"><div class="kl">Win rate</div><div class="kv" id="bt-wr">--</div></div>
+          <div class="kc"><div class="kl">Sharpe ratio</div><div class="kv" id="bt-sh">--</div></div>
+          <div class="kc"><div class="kl">vs buy and hold</div><div class="kv" id="bt-bh">--</div></div>
+        </div>
+        <div class="cw" style="height:200px"><canvas id="bt-c" role="img" aria-label="Backtest equity curve">Equity curve</canvas></div>
+        <button class="xbtn" id="bt-ai-btn">Ask AI to interpret these backtest results</button>
+      </div>
+    </div>
+
+    <!-- PORTFOLIO -->
+    <div class="scr" id="scr-port">
+      <div class="r">
+        <input id="p-sym" placeholder="Symbol e.g. TCS.NS" style="width:130px" list="stock-list"/>
+        <input id="p-qty" placeholder="Qty" type="number" style="width:60px"/>
+        <input id="p-cost" placeholder="Avg price" type="number" style="width:85px"/>
+        <select id="p-type" style="width:90px"><option value="stock">Stock</option><option value="etf">ETF</option><option value="bond">G-Sec</option></select>
+        <button class="btn p" id="p-add-btn"><i class="ti ti-plus" aria-hidden="true"></i> Add</button>
+        <button class="btn" id="p-refresh-btn"><i class="ti ti-refresh" aria-hidden="true"></i> Refresh</button>
+      </div>
+      <div class="kg">
+        <div class="kc"><div class="kl">Total value</div><div class="kv" id="p-tv">Rs 0</div></div>
+        <div class="kc"><div class="kl">Total P&amp;L</div><div class="kv" id="p-pnl">--</div><div class="ks" id="p-pnlp">--</div></div>
+        <div class="kc"><div class="kl">Day change</div><div class="kv" id="p-day">--</div></div>
+        <div class="kc"><div class="kl">Positions</div><div class="kv" id="p-cnt">0</div></div>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Symbol</th><th>Type</th><th>Qty</th><th>Price</th><th>Value</th><th>P&L</th><th>P&L%</th><th></th></tr></thead>
+          <tbody id="p-body"></tbody>
+        </table>
+      </div>
+      <div id="p-cw" style="display:none;margin-top:9px"><div class="cw" style="height:160px"><canvas id="p-d" role="img" aria-label="Portfolio allocation donut">Allocation</canvas></div></div>
+      <div class="note">Portfolio is stored in memory for this session. Add demo positions to try it out.</div>
+      <button class="xbtn" style="margin-top:9px" id="p-ai-btn">Ask AI to analyze my portfolio</button>
+    </div>
+
+    <!-- SCREENER -->
+    <div class="scr" id="scr-sc">
+      <div class="sc-filters">
+        <select id="sc-type"><option value="">All types</option><option value="stock">Stocks</option><option value="etf">ETFs</option><option value="bond">G-Secs</option></select>
+        <select id="sc-sec"><option value="">All sectors</option><option value="IT">IT</option><option value="Banking">Banking</option><option value="Energy">Energy</option><option value="FMCG">FMCG</option><option value="Auto">Auto</option><option value="Pharma">Pharma</option><option value="Telecom">Telecom</option></select>
+        <select id="sc-sort"><option value="mcap">Sort: Mkt cap</option><option value="yield">Sort: Yield</option><option value="pe">Sort: P/E</option></select>
+      </div>
+      <div class="sc-filters">
+        <input id="sc-pe" placeholder="Max P/E" type="number"/>
+        <input id="sc-y" placeholder="Min yield %" type="number" step="0.1"/>
+        <button class="btn p" id="sc-run-btn"><i class="ti ti-filter" aria-hidden="true"></i> Screen</button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Symbol</th><th>Type</th><th>Name</th><th>Price</th><th>Chg%</th><th>Mkt cap</th><th>P/E</th><th>Yield</th><th>Sector</th></tr></thead>
+          <tbody id="sc-body"></tbody>
+        </table>
+      </div>
+      <button class="xbtn" style="margin-top:8px" id="sc-ai-btn">Ask AI to rank results</button>
+    </div>
+
+  </div>
+  <div class="sbar">
+    <span><span class="dot" id="status-dot"></span><span id="status-text">Seeded data</span></span>
+    <span id="sclock"></span>
+    <span>NSE/BSE · Claude AI</span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
