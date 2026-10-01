@@ -93,6 +93,7 @@
           <div class="ic"><div class="ict">Signal summary</div><div id="t-sig"></div></div>
         </div>
         <button class="xbtn" id="t-ai-btn">Ask AI to interpret these signals</button>
+        <div class="ai-box" id="t-ai" style="display:none"></div>
       </div>
     </div>
 
@@ -124,6 +125,7 @@
           </div>
         </div>
         <button class="xbtn" id="fc-ai-btn">Ask AI to contextualize this forecast</button>
+        <div class="ai-box" id="fc-ai" style="display:none"></div>
       </div>
     </div>
 
@@ -149,6 +151,7 @@
       </div>
       <div class="note">Strikes spaced at NSE convention: NIFTY 50pt, BANKNIFTY 100pt. Risk-free rate r = RBI repo rate (5.50%). Computed live with Black-Scholes, not a live NSE options feed.</div>
       <button class="xbtn" style="margin-top:8px" id="opt-ai-btn">Ask AI: explain Greeks and strategy ideas</button>
+      <div class="ai-box" id="opt-ai" style="display:none"></div>
     </div>
 
     <!-- MACRO -->
@@ -160,6 +163,7 @@
         <div class="ic"><div class="ict">Key rates and spreads</div><div id="mac-sp"></div></div>
       </div>
       <button class="xbtn" id="mac-ai-btn">Ask AI to analyze India macro environment</button>
+      <div class="ai-box" id="mac-ai" style="display:none"></div>
     </div>
 
     <!-- EARNINGS -->
@@ -170,6 +174,7 @@
       </div>
       <div id="earn-list"></div>
       <button class="xbtn" style="margin-top:8px" id="earn-ai-btn">Ask AI which results to watch</button>
+      <div class="ai-box" id="earn-ai" style="display:none"></div>
     </div>
 
     <!-- HEATMAP -->
@@ -185,6 +190,7 @@
         <span><span class="sw neu-sw"></span>Flat</span>
       </div>
       <button class="xbtn" id="hm-ai-btn">Ask AI to analyze sector rotation</button>
+      <div class="ai-box" id="hm-ai" style="display:none"></div>
     </div>
 
     <!-- NEWS -->
@@ -240,6 +246,7 @@
         </div>
         <div class="cw" style="height:200px"><canvas id="bt-c" role="img" aria-label="Backtest equity curve">Equity curve</canvas></div>
         <button class="xbtn" id="bt-ai-btn">Ask AI to interpret these backtest results</button>
+        <div class="ai-box" id="bt-ai" style="display:none"></div>
       </div>
     </div>
 
@@ -268,6 +275,7 @@
       <div id="p-cw" style="display:none;margin-top:9px"><div class="cw" style="height:160px"><canvas id="p-d" role="img" aria-label="Portfolio allocation donut">Allocation</canvas></div></div>
       <div class="note">Portfolio is stored in memory for this session. Add demo positions to try it out.</div>
       <button class="xbtn" style="margin-top:9px" id="p-ai-btn">Ask AI to analyze my portfolio</button>
+      <div class="ai-box" id="p-ai" style="display:none"></div>
     </div>
 
     <!-- SCREENER -->
@@ -289,6 +297,7 @@
         </table>
       </div>
       <button class="xbtn" style="margin-top:8px" id="sc-ai-btn">Ask AI to rank results</button>
+      <div class="ai-box" id="sc-ai" style="display:none"></div>
     </div>
 
   </div>

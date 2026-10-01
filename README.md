@@ -52,14 +52,23 @@ This says nothing about earnings, news, or flows — it's a risk range built pur
 
 ## AI integration
 
-The Analyse, Technical, Forecast, Macro, Earnings, Heatmap, Backtest, Portfolio, and Screener tabs each have an "Ask AI" button intended to call the Claude API (`claude-sonnet-5`) for natural-language analysis.
+Every tab (Analyse, Technical, Forecast, Options, Macro, Earnings, Heatmap, Backtest, Portfolio, Screener) has an "Ask AI" button that sends the data currently on screen to Claude for a short natural-language read — a bull/bear case, a plain-English explanation of the Greeks, a sector-rotation read on the heatmap, and so on.
 
-**Important:** calling the Anthropic API directly from client-side JavaScript would require exposing an API key in the browser, which is insecure. The AI buttons are wired to call a placeholder backend proxy at `ANTHROPIC_PROXY_URL` (see `app.js`). To make them functional:
+**Why this needs a backend at all:** calling the Anthropic API directly from browser JavaScript would mean shipping your API key in public page source — anyone could read it from view-source and spend against your account. So the front-end (`app.js`, function `callClaude`) only ever sends plain prompt text to `ANTHROPIC_PROXY_URL`, a small serverless function (`api/claude.js`) that holds the real key server-side and forwards the request. The proxy fixes the model and a 500-token cap server-side too, so a visitor can't make it call an expensive model or return huge responses against your key — this endpoint is public and unauthenticated, since it's a portfolio demo, so keeping per-request cost low is a deliberate design choice, not an oversight.
 
-1. Stand up a small backend (e.g. a serverless function on Vercel/Netlify, or a tiny Express server) that accepts a prompt and forwards it to `https://api.anthropic.com/v1/messages` with your API key attached server-side.
-2. Update `ANTHROPIC_PROXY_URL` in `app.js` to point to that endpoint.
+### Deploying the AI proxy (one-time setup)
 
-Without this, the AI buttons show an explanatory alert rather than fail silently.
+GitHub Pages only serves static files, so the proxy needs a separate host that can run server code. [Vercel](https://vercel.com)'s free tier works well for a single function like this:
+
+1. Sign in to [vercel.com](https://vercel.com) with your GitHub account.
+2. **Add New → Project**, import this `finterm-india` repo.
+3. Leave the framework preset as "Other" and deploy — Vercel auto-detects `api/claude.js` as a serverless function and serves everything else (`index.html`, `app.js`, etc.) as static files.
+4. In the new project's **Settings → Environment Variables**, add `ANTHROPIC_API_KEY` with your key from [console.anthropic.com](https://console.anthropic.com) (Production environment). Redeploy after adding it (Vercel doesn't pick up new env vars on an already-built deployment).
+5. Note the deployment URL Vercel gives you (defaults to `https://<project-name>.vercel.app`).
+6. If it's not exactly `https://finterm-india.vercel.app`, update `ANTHROPIC_PROXY_URL` near the top of the AI section in `app.js` to match, then commit and push — GitHub Pages will redeploy automatically.
+7. `api/claude.js` only accepts requests from the `ALLOWED_ORIGIN` it's hardcoded to (your GitHub Pages URL). If you fork this or host the front-end elsewhere, update that constant too.
+
+Until this is deployed, the AI buttons show an honest "AI unavailable" message rather than failing silently or exposing a key — the rest of the terminal (live data, technical analysis, forecasting, options pricing, backtesting) works fully without it.
 
 ## Running locally
 
@@ -113,6 +122,7 @@ finterm-india/
 ├── style.css                # dark theme with saffron accent
 ├── data.js                  # seeded/fallback market data, symbol search directory
 ├── app.js                   # data layer (live+fallback), indicators, forecast model, charts
+├── api/claude.js             # Vercel serverless proxy for the Ask AI buttons (separate deploy)
 ├── serve.ps1                 # zero-dependency local static server for Windows
 ├── .github/workflows/pages.yml  # GitHub Pages deploy on push to main
 └── README.md

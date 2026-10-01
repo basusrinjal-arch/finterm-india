@@ -1,0 +1,7 @@
+{
+  "name": "finterm-india",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Live NSE/BSE financial terminal - static front-end plus a Vercel serverless proxy for the Ask AI feature.",
+  "license": "MIT"
+}

@@ -25,7 +25,7 @@ function fetchJSON(url) {
     });
 }
 
-var CH = {}, port = [], alerts = [], tdata = null, btResult = null, curA = null;
+var CH = {}, port = [], alerts = [], tdata = null, btResult = null, curA = null, lastForecast = null;
 var inds = { sma: true, bb: false, rsi: false, macd: false, vol: false, ema: false, atr: false };
 
 function fIN(n) {
@@ -463,6 +463,8 @@ function doForecast() {
     if (err || !hist || hist.prices.length < 30) { $('fc-err').style.display = 'block'; $('fc-err').textContent = 'Not enough history to project ' + sym + ' (need 30+ trading days).'; return; }
     $('fc-main').style.display = 'block';
     var fc = runForecast(hist.prices, hist.dates, horizon);
+    fc.sym = sym; fc.horizon = horizon;
+    lastForecast = fc;
     var up = fc.expPrice >= fc.S0;
     $('fc-src').innerHTML = srcBadge(hist.src);
     $('fc-cur').textContent = fINp(fc.S0);
@@ -797,48 +799,112 @@ function doSc() {
 }
 
 // ---------- AI INTEGRATION ----------
-// Note: calling the Anthropic API directly from a static front-end page requires
-// either a backend proxy or a server-side function, since the API key cannot be
-// safely exposed in client-side JS. The function below is structured for that:
-// point ANTHROPIC_PROXY_URL at your own backend endpoint that forwards to
-// https://api.anthropic.com/v1/messages with your API key attached server-side.
+// Calling the Anthropic API directly from a static front-end page would mean shipping
+// an API key in public page source, which anyone could steal and spend. Instead this
+// calls a small serverless proxy (see api/claude.js) deployed separately on Vercel,
+// which holds the real key server-side and forwards just the prompt text. The proxy
+// also picks the model and token cap, so the client never controls spend directly.
 
-var ANTHROPIC_PROXY_URL = '/api/claude'; // replace with your backend proxy endpoint
+var ANTHROPIC_PROXY_URL = 'https://finterm-india.vercel.app/api/claude'; // update after you deploy the proxy (see README)
 
 function callClaude(prompt, onResult) {
   fetch(ANTHROPIC_PROXY_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+    body: JSON.stringify({ prompt: prompt })
   })
-    .then(function (res) { return res.json(); })
-    .then(function (data) { onResult((data.content && data.content[0] && data.content[0].text) || 'No response.', null); })
+    .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+    .then(function (r) {
+      if (!r.ok) throw new Error((r.data && r.data.error && (r.data.error.message || r.data.error)) || 'proxy error');
+      var text = r.data.content && r.data.content[0] && r.data.content[0].text;
+      onResult(text || 'No response.', null);
+    })
     .catch(function (e) { onResult(null, e); });
+}
+
+// Generic runner: shows a box, builds the prompt lazily (so it only fires once there's
+// something to analyze), calls Claude, and renders the result or an honest error.
+function askAI(boxId, promptBuilder) {
+  var box = $(boxId);
+  if (!box) return;
+  var prompt = promptBuilder();
+  if (!prompt) { box.style.display = 'block'; box.textContent = 'Nothing to analyze yet - load some data on this tab first.'; return; }
+  box.style.display = 'block';
+  box.textContent = 'Analyzing with AI...';
+  callClaude(prompt, function (text, err) {
+    box.textContent = err ? 'AI unavailable (' + err.message + '). The backend proxy at ' + ANTHROPIC_PROXY_URL + ' may not be deployed yet - see README.' : text;
+  });
 }
 
 function doAI_A() {
   if (!curA) { doA(); return; }
-  var a = curA, box = $('a-ai'); box.style.display = 'block'; box.textContent = 'Analyzing with AI...';
-  var prompt = 'You are a concise Indian equity analyst. Analyze ' + a.sym + ' (' + a.typ + ') listed on NSE/BSE. Data: price Rs ' + (a.price ? a.price.toFixed(2) : 'NA') + ', day ' + (a.chg >= 0 ? '+' : '') + (a.chg ? a.chg.toFixed(2) : 'NA') + ' (' + (a.chgPct ? a.chgPct.toFixed(2) : 'NA') + '%), P/E ' + (a.pe ? a.pe.toFixed(1) : 'N/A') + ', beta ' + (a.beta ? a.beta.toFixed(2) : 'N/A') + '. Provide: 1-sentence summary, bull case, bear case, verdict BUY/HOLD/WATCH/AVOID. Max 100 words.';
-  callClaude(prompt, function (text, err) {
-    box.textContent = err ? 'AI unavailable. Connect this to your backend proxy at ' + ANTHROPIC_PROXY_URL + ' to enable live analysis.' : text;
+  askAI('a-ai', function () {
+    var a = curA;
+    return 'You are a concise Indian equity analyst. Analyze ' + a.sym + ' (' + a.typ + ') listed on NSE/BSE. Data: price Rs ' + (a.price ? a.price.toFixed(2) : 'NA') + ', day ' + (a.chg >= 0 ? '+' : '') + (a.chg ? a.chg.toFixed(2) : 'NA') + ' (' + (a.chgPct ? a.chgPct.toFixed(2) : 'NA') + '%), P/E ' + (a.pe ? a.pe.toFixed(1) : 'N/A') + ', beta ' + (a.beta ? a.beta.toFixed(2) : 'N/A') + '. Provide: 1-sentence summary, bull case, bear case, verdict BUY/HOLD/WATCH/AVOID. Max 100 words.';
   });
 }
 function doAI_T() {
-  var sym = ($('t-sym').value || 'RELIANCE.NS').toUpperCase().trim();
-  var prompt = 'Technical analysis for ' + sym + ' (NSE-listed):\n\nIndicators:\n' + $('t-iv').innerText + '\n\nSignals:\n' + $('t-sig').innerText + '\n\nInterpret these signals. What is the short-term and medium-term outlook?';
-  console.log('AI prompt (connect a backend to send this to Claude):', prompt);
-  alert('Connect ANTHROPIC_PROXY_URL in app.js to a backend that calls the Claude API to enable this.');
+  askAI('t-ai', function () {
+    if (!tdata) return null;
+    return 'Technical analysis for ' + tdata.sym + ' (NSE-listed):\n\nIndicators:\n' + $('t-iv').innerText + '\n\nSignals:\n' + $('t-sig').innerText + '\n\nIn under 120 words, interpret these signals. What is the short-term and medium-term outlook?';
+  });
+}
+function doAI_FC() {
+  askAI('fc-ai', function () {
+    if (!lastForecast) return null;
+    var f = lastForecast;
+    return 'A statistical (GBM) forecast for ' + f.sym + ' projects a median price of Rs ' + f.expPrice.toFixed(2) + ' (current Rs ' + f.S0.toFixed(2) + ') over ' + f.horizon + ' trading days, with a 68% range of Rs ' + f.loRange.toFixed(2) + ' to Rs ' + f.hiRange.toFixed(2) + '. Annualized volatility ' + f.annVol.toFixed(1) + '%, drift ' + f.annDrift.toFixed(1) + '%, probability of being higher ' + f.probUp.toFixed(1) + '%. In under 100 words, put this in plain-English context for a retail investor - what does this range actually mean, and what could make the real outcome diverge from it?';
+  });
+}
+function doAI_Opt() {
+  askAI('opt-ai', function () {
+    var call = $('og-call').textContent, put = $('og-put').textContent, delta = $('og-delta').textContent;
+    if (call === '--') return null;
+    return 'An ATM options chain for ' + $('opt-idx').value + ' at spot ' + $('opt-price').value + ', expiry input ' + $('opt-exp').selectedOptions[0].text + ', IV ' + $('opt-vol').value + '%, shows ATM call price ' + call + ', ATM put price ' + put + ', ATM delta ' + delta + '. In under 120 words, explain what Delta, Gamma, Theta and Vega mean here in plain terms, and suggest one or two simple strategy ideas (e.g. covered call, protective put, straddle) this setup could suit.';
+  });
+}
+function doAI_Mac() {
+  askAI('mac-ai', function () {
+    var grid = $('mac-grid').innerText, flows = $('mac-flows').innerText, sp = $('mac-sp').innerText;
+    if (!grid) return null;
+    return 'Current India macro snapshot:\n' + grid + '\n\nFII/DII flows:\n' + flows + '\n\nRates and spreads:\n' + sp + '\n\nIn under 120 words, summarize what this macro backdrop means for Indian equities right now.';
+  });
+}
+function doAI_Earn() {
+  askAI('earn-ai', function () {
+    var list = $('earn-list').innerText;
+    if (!list) return null;
+    return 'Upcoming India corporate earnings:\n' + list + '\n\nIn under 100 words, which of these results are most worth watching and why?';
+  });
+}
+function doAI_HM() {
+  askAI('hm-ai', function () {
+    var grid = $('hm-grid').innerText;
+    if (!grid) return null;
+    return 'Current heatmap (' + $('hm-view').value + ' view) of day-change percentages:\n' + grid + '\n\nIn under 100 words, what does this say about sector rotation or risk appetite today?';
+  });
 }
 function doAI_BT() {
-  if (!btResult) return;
-  alert('Connect ANTHROPIC_PROXY_URL in app.js to a backend that calls the Claude API to enable this.');
+  askAI('bt-ai', function () {
+    if (!btResult) return null;
+    var r = btResult;
+    return 'A backtest of the "' + r.strat + '" strategy on ' + r.sym + ' with starting capital Rs ' + r.capital + ' produced: final value Rs ' + r.finalVal.toFixed(0) + ', total return ' + r.ret.toFixed(1) + '%, max drawdown ' + r.maxDD.toFixed(1) + '%, ' + r.trades + ' trades, ' + r.winRate + '% win rate, Sharpe ratio ' + r.sharpe + ', vs buy-and-hold ' + (r.ret - r.bhRet).toFixed(1) + 'pp. In under 120 words, interpret these results - is this a good strategy, and what is its biggest weakness?';
+  });
 }
 function doAI_P() {
-  if (!port.length) { alert('Add positions first'); return; }
-  alert('Connect ANTHROPIC_PROXY_URL in app.js to a backend that calls the Claude API to enable this.');
+  askAI('p-ai', function () {
+    if (!port.length) return null;
+    var lines = port.map(function (p) { return p.sym + ': ' + p.qty + ' @ avg Rs ' + p.cost + (p.price ? ', now Rs ' + p.price : ''); }).join('\n');
+    return 'A retail investor holds this portfolio:\n' + lines + '\n\nTotal value: ' + $('p-tv').textContent + ', total P&L: ' + $('p-pnl').textContent + '. In under 120 words, comment on concentration risk and diversification - nothing that could be read as personalized investment advice, just structural observations.';
+  });
 }
-function doAI_FC() { alert('Connect ANTHROPIC_PROXY_URL in app.js to enable AI commentary on this forecast.'); }
+function doAI_Sc() {
+  askAI('sc-ai', function () {
+    var rows = $('sc-body').innerText;
+    if (!rows) return null;
+    return 'Screener results:\n' + rows + '\n\nIn under 100 words, rank the 3 most interesting names here and explain why briefly.';
+  });
+}
 
 // ---------- TICKER & CLOCK ----------
 
@@ -897,12 +963,12 @@ document.addEventListener('DOMContentLoaded', function () {
   for (var ci = 0; ci < chips.length; ci++) { chips[ci].addEventListener('click', function () { tog(this.getAttribute('data-ind')); }); }
   $('opt-idx').addEventListener('change', updOptDefaults);
   $('opt-build-btn').addEventListener('click', buildChain);
-  $('opt-ai-btn').addEventListener('click', function () { alert('Connect ANTHROPIC_PROXY_URL in app.js to enable AI explanations.'); });
-  $('mac-ai-btn').addEventListener('click', function () { alert('Connect ANTHROPIC_PROXY_URL in app.js to enable AI macro analysis.'); });
+  $('opt-ai-btn').addEventListener('click', doAI_Opt);
+  $('mac-ai-btn').addEventListener('click', doAI_Mac);
   $('earn-refresh-btn').addEventListener('click', renderEarnings);
-  $('earn-ai-btn').addEventListener('click', function () { alert('Connect ANTHROPIC_PROXY_URL in app.js to enable AI earnings analysis.'); });
+  $('earn-ai-btn').addEventListener('click', doAI_Earn);
   $('hm-update-btn').addEventListener('click', buildHeatmap);
-  $('hm-ai-btn').addEventListener('click', function () { alert('Connect ANTHROPIC_PROXY_URL in app.js to enable AI sector analysis.'); });
+  $('hm-ai-btn').addEventListener('click', doAI_HM);
   $('news-load-btn').addEventListener('click', loadNews);
   $('al-add-btn').addEventListener('click', addAlert);
   $('bt-run-btn').addEventListener('click', doBacktest);
@@ -911,7 +977,7 @@ document.addEventListener('DOMContentLoaded', function () {
   $('p-refresh-btn').addEventListener('click', refreshP);
   $('p-ai-btn').addEventListener('click', doAI_P);
   $('sc-run-btn').addEventListener('click', doSc);
-  $('sc-ai-btn').addEventListener('click', function () { alert('Connect ANTHROPIC_PROXY_URL in app.js to enable AI screener ranking.'); });
+  $('sc-ai-btn').addEventListener('click', doAI_Sc);
 
   populateSymbolList();
   updateStatusBar();
